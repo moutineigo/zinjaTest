@@ -7,29 +7,33 @@ export default async function handler(req, res) {
     const resolvedUrl = response.url;
 
     const match = resolvedUrl.match(/@([-.\d]+),([-.\d]+)/);
-    if (!match) return res.status(400).json({ error: 'URLに緯度経度が含まれていません', resolvedUrl });
+    if (!match) return res.status(400).json({ error: '緯度経度がURLに含まれていません', resolvedUrl });
 
     const lat = match[1];
     const lng = match[2];
+    const apiKey = process.env.GOOGLE_API_KEY;
 
-    const geoRes = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.GOOGLE_API_KEY}&language=ja`
-    );
-    const geoData = await geoRes.json();
+    // 1. Place Search API で近くのスポット（神社など）を取得
+    const placeSearchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=100&keyword=神社&key=${apiKey}&language=ja`;
+    const placeSearchRes = await fetch(placeSearchUrl);
+    const placeSearchData = await placeSearchRes.json();
 
-    if (geoData.status !== "OK") {
-      return res.status(500).json({ error: "Geocoding API 失敗", detail: geoData });
+    if (placeSearchData.status !== "OK") {
+      return res.status(500).json({ error: "Place Search API 失敗", detail: placeSearchData });
     }
 
-    // ログ確認用に候補全て出力（Vercel のログで確認可能）
-    console.log("全候補住所:", geoData.results.map(r => r.formatted_address));
+    const placeId = placeSearchData.results[0].place_id;
 
-    // POI/神社などの候補優先
-    const result = geoData.results.find(r =>
-      r.types.includes("premise") ||
-      r.types.includes("point_of_interest") ||
-      r.types.includes("establishment")
-    ) || geoData.results[0];
+    // 2. Place Details API で詳細情報を取得
+    const placeDetailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${apiKey}&language=ja`;
+    const placeDetailsRes = await fetch(placeDetailsUrl);
+    const placeDetailsData = await placeDetailsRes.json();
+
+    if (placeDetailsData.status !== "OK") {
+      return res.status(500).json({ error: "Place Details API 失敗", detail: placeDetailsData });
+    }
+
+    const result = placeDetailsData.result;
 
     res.status(200).json({
       resolvedUrl,
