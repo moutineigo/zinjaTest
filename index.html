@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Maps 情報抽出（Place ID対応・短縮URL対応）</title>
+  <title>Google Maps 情報抽出（短縮URL展開API対応）</title>
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f8f8f8; }
     .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -62,8 +62,10 @@
     }
 
     async function resolveShortUrl(shortUrl) {
-      const response = await fetch(shortUrl, { method: 'GET', redirect: 'follow' });
-      return response.url;
+      const res = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'URL展開失敗');
+      return data.resolvedUrl;
     }
 
     function copyOutput() {
