@@ -24,7 +24,6 @@
 
   <script>
     let count = 1;
-    const API_KEY = 
 
 async function extractInfo() {
   const shortUrl = document.getElementById('uriInput').value;
@@ -40,7 +39,8 @@ async function extractInfo() {
     if (geoData.status !== "OK") throw new Error("Geocode取得失敗: " + geoData.status);
         const placeId = geoData.results[0].place_id;
 
-        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${API_KEY}&language=ja`;
+　　    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${apiKey}&language=ja`;
+
         const detailsRes = await fetch(detailsUrl);
         const detailsData = await detailsRes.json();
 
