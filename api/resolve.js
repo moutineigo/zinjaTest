@@ -3,24 +3,27 @@ export default async function handler(req, res) {
   if (!targetUrl) return res.status(400).json({ error: 'Missing URL' });
 
   try {
-    // 1. 短縮URLを展開
     const response = await fetch(targetUrl, { method: 'GET', redirect: 'follow' });
     const resolvedUrl = response.url;
 
-    // 2. 緯度・経度を抽出
-    const match = resolvedUrl.match(/@([-.\d]+),([-.\d]+)/);
-    if (!match) {
+    // 拡張版：複数の座標表現に対応
+    const extractLatLngFromUrl = (url) => {
+      let match = url.match(/@([-.\d]+),([-.\d]+)/);
+      if (match) return [match[1], match[2]];
+      match = url.match(/!3d([-.\d]+)!4d([-.\d]+)/);
+      if (match) return [match[1], match[2]];
+      return [null, null];
+    };
+
+    const [lat, lng] = extractLatLngFromUrl(resolvedUrl);
+    if (!lat || !lng) {
       return res.status(400).json({
-        error: 'URLに緯度経度が含まれていません',
+        error: '緯度経度をURLから抽出できませんでした',
         resolvedUrl
       });
     }
 
-    const lat = match[1];
-    const lng = match[2];
     const apiKey = process.env.GOOGLE_API_KEY;
-
-    // 3. Geocoding API の呼び出し
     const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=ja`;
     const geoRes = await fetch(geoUrl);
     const geoData = await geoRes.json();
@@ -32,7 +35,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // POIなどのtype優先を除き、先頭の結果をそのまま使う
     const result = geoData.results[0];
 
     res.status(200).json({
@@ -41,6 +43,7 @@ export default async function handler(req, res) {
       lng,
       result
     });
+
   } catch (e) {
     res.status(500).json({
       error: 'サーバー内部エラー',
