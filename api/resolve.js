@@ -1,16 +1,55 @@
+// /api/resolve.js
 export default async function handler(req, res) {
   const targetUrl = req.query.url;
   if (!targetUrl) return res.status(400).json({ error: 'Missing URL' });
 
   try {
+    // URL展開
     const response = await fetch(targetUrl, {
       method: 'GET',
       redirect: 'follow',
     });
 
+    const resolvedUrl = response.url;
+
+    // Google APIキー（環境変数）
     const apiKey = process.env.GOOGLE_API_KEY;
-    res.status(200).json({ resolvedUrl: response.url, apiKey });
+
+    // 1. Geocoding APIでplace_id取得
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(resolvedUrl)}&key=${apiKey}`;
+    const geoRes = await fetch(geocodeUrl);
+    const geoData = await geoRes.json();
+
+    if (geoData.status !== "OK") {
+      return res.status(500).json({ error: "Geocode失敗", details: geoData });
+    }
+
+    const placeId = geoData.results[0].place_id;
+
+    // 2. Place Details APIで正式名称など取得
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${apiKey}&language=ja`;
+    const detailsRes = await fetch(detailsUrl);
+    const detailsData = await detailsRes.json();
+
+    if (detailsData.status !== "OK") {
+      return res.status(500).json({ error: "Place Details取得失敗", details: detailsData });
+    }
+
+    const result = detailsData.result;
+    const name = result.name || "";
+    const address = result.formatted_address || "";
+    const comps = result.address_components || [];
+    const pref = (comps.find(c => c.types.includes("administrative_area_level_1")) || {}).long_name || "";
+    const city = (comps.find(c => c.types.includes("locality") || c.types.includes("administrative_area_level_2")) || {}).long_name || "";
+
+    return res.status(200).json({
+      resolvedUrl,
+      name,
+      address,
+      pref,
+      city
+    });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to resolve URL', details: e.message });
+    return res.status(500).json({ error: 'サーバーエラー', message: e.message });
   }
 }
