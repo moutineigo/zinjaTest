@@ -66,6 +66,7 @@ async function extractInfo() {
     async function resolveShortUrl(shortUrl) {
   const res = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
   const data = await res.json();
+        console.log("[DEBUG] API結果:", data);  // ←★ここ追加
   if (!res.ok) throw new Error(data.error || 'URL展開失敗');
   return data; // ← resolvedUrl と apiKey を含む
 }
