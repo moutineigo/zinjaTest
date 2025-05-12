@@ -21,12 +21,15 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Geocoding API 失敗", detail: geoData });
     }
 
-    // 「神社」「施設名」などを優先
+    // ログ確認用に候補全て出力（Vercel のログで確認可能）
+    console.log("全候補住所:", geoData.results.map(r => r.formatted_address));
+
+    // POI/神社などの候補優先
     const result = geoData.results.find(r =>
       r.types.includes("premise") ||
       r.types.includes("point_of_interest") ||
       r.types.includes("establishment")
-    ) || geoData.results[0]; // なければ先頭
+    ) || geoData.results[0];
 
     res.status(200).json({
       resolvedUrl,
