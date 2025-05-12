@@ -25,33 +25,17 @@
   <script>
     let count = 1;
 
-async function extractInfo() {
-  const shortUrl = document.getElementById('uriInput').value;
-  if (!shortUrl) return alert("短縮URLを入力してください。");
+    async function extractInfo() {
+      const shortUrl = document.getElementById('uriInput').value;
+      if (!shortUrl) return alert("短縮URLを入力してください。");
 
-  try {
-    const { resolvedUrl, apiKey } = await resolveShortUrl(shortUrl);
+      try {
+        const res = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
+        const data = await res.json();
 
-    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(resolvedUrl)}&key=${apiKey}`;
-    const geoRes = await fetch(geocodeUrl);
-    const geoData = await geoRes.json();
+        if (!res.ok) throw new Error(data.error || "情報取得に失敗しました");
 
-    if (geoData.status !== "OK") throw new Error("Geocode取得失敗: " + geoData.status);
-        const placeId = geoData.results[0].place_id;
-
-　　    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${apiKey}&language=ja`;
-
-        const detailsRes = await fetch(detailsUrl);
-        const detailsData = await detailsRes.json();
-
-        if (detailsData.status !== "OK") throw new Error("詳細取得失敗: " + detailsData.status);
-
-        const result = detailsData.result;
-        const name = result.name || "";
-        const address = result.formatted_address || "";
-        const comps = result.address_components || [];
-        const pref = (comps.find(c => c.types.includes("administrative_area_level_1")) || {}).long_name || "";
-        const city = (comps.find(c => c.types.includes("locality") || c.types.includes("administrative_area_level_2")) || {}).long_name || "";
+        const { resolvedUrl, name, address, pref, city } = data;
 
         const output = `番号: ${count}\n都道府県＋市町村: ${pref}${city}\n地図の名前: ${name}\n住所: ${address}\nURI: ${resolvedUrl}`;
         document.getElementById('outputArea').textContent = output;
@@ -60,16 +44,6 @@ async function extractInfo() {
         alert("エラー: " + e.message);
       }
     }
-
-
-
-    async function resolveShortUrl(shortUrl) {
-  const res = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
-  const data = await res.json();
-        console.log("[DEBUG] API結果:", data);  // ←★ここ追加
-  if (!res.ok) throw new Error(data.error || 'URL展開失敗');
-  return data; // ← resolvedUrl と apiKey を含む
-}
 
     function copyOutput() {
       const text = document.getElementById('outputArea').textContent;
