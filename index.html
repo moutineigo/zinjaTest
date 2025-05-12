@@ -5,53 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Google Maps 情報抽出（短縮URL対応）</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f5f5f5;
-      padding: 40px;
-    }
-    .container {
-      background-color: white;
-      max-width: 600px;
-      margin: auto;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px;
-      background-color: #f76c6c;
-      color: white;
-      cursor: pointer;
-    }
-    .output {
-      background-color: #e8f2ff;
-      padding: 15px;
-      margin-top: 20px;
-      border-radius: 5px;
-      white-space: pre-wrap;
-    }
-    .copy-button {
-      background-color: #2196f3;
-      margin-top: 10px;
-    }
+    body { font-family: sans-serif; background: #f8f8f8; padding: 20px; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; font-size: 16px; }
+    button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; }
+    .go-button { background: #f76c6c; color: white; }
+    .copy-button { background: #2196f3; color: white; margin-top: 10px; }
+    .output { background: #e6f0ff; padding: 10px; margin-top: 20px; border-radius: 5px; white-space: pre-wrap; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Google Maps情報抽出（短縮URL対応）</h2>
-    <input id="uriInput" type="text" placeholder="Google Mapsの短縮URLを入力" />
-    <button onclick="extractInfo()">GO</button>
-    <div class="output" id="outputArea"></div>
+    <input id="uriInput" type="text" placeholder="https://maps.app.goo.gl/..." />
+    <button class="go-button" onclick="extractInfo()">GO</button>
+    <div id="outputArea" class="output"></div>
     <button class="copy-button" onclick="copyOutput()">コピー</button>
   </div>
 
@@ -59,26 +27,29 @@
     let count = 1;
 
     async function extractInfo() {
-      const shortUrl = document.getElementById('uriInput').value;
+      const shortUrl = document.getElementById("uriInput").value.trim();
       if (!shortUrl) return alert("短縮URLを入力してください。");
 
       try {
-        const res = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
-        const data = await res.json();
+        const apiRes = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
+        const data = await apiRes.json();
 
-        if (!res.ok) {
-          console.error("APIエラー:", data);
-          throw new Error(data.error || 'API失敗');
-        }
+        if (!apiRes.ok) throw new Error(data.error || "APIエラー");
+
+        const { resolvedUrl, result } = data;
+
+        const name = result.name || "";
+        const address = result.formatted_address || "";
+        const comps = result.address_components || [];
+        const pref = (comps.find(c => c.types.includes("administrative_area_level_1")) || {}).long_name || "";
+        const city = (comps.find(c => c.types.includes("locality") || c.types.includes("administrative_area_level_2")) || {}).long_name || "";
 
         const output = `番号: ${count}
-都道府県＋市町村: ${data.pref}${data.city}
-地図の名前: ${data.name}
-住所: ${data.address}
-URI:
-${data.resolvedUrl}`;
-
-        document.getElementById('outputArea').textContent = output;
+都道府県＋市町村: ${pref}${city}
+地図の名前: ${name}
+住所: ${address}
+URI: ${resolvedUrl}`;
+        document.getElementById("outputArea").textContent = output;
         count++;
       } catch (e) {
         alert("エラー: " + e.message);
@@ -86,7 +57,7 @@ ${data.resolvedUrl}`;
     }
 
     function copyOutput() {
-      const text = document.getElementById('outputArea').textContent;
+      const text = document.getElementById("outputArea").textContent;
       navigator.clipboard.writeText(text).then(() => alert("コピーしました！"));
     }
   </script>
