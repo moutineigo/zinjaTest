@@ -5,21 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Google Maps 情報抽出（短縮URL対応）</title>
   <style>
-    body { font-family: sans-serif; background: #f8f8f8; padding: 20px; }
-    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; font-size: 16px; }
-    button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; }
-    .go-button { background: #f76c6c; color: white; }
-    .copy-button { background: #2196f3; color: white; margin-top: 10px; }
-    .output { background: #e6f0ff; padding: 10px; margin-top: 20px; border-radius: 5px; white-space: pre-wrap; }
+    body {
+      font-family: sans-serif;
+      background-color: #f2f2f2;
+      padding: 40px;
+    }
+    .container {
+      background: white;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #f76c6c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .output {
+      margin-top: 20px;
+      background: #e7f0ff;
+      padding: 15px;
+      white-space: pre-wrap;
+      border-radius: 5px;
+    }
+    .copy-button {
+      margin-top: 10px;
+      background: #2196f3;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Google Maps情報抽出（短縮URL対応）</h2>
-    <input id="uriInput" type="text" placeholder="https://maps.app.goo.gl/..." />
-    <button class="go-button" onclick="extractInfo()">GO</button>
-    <div id="outputArea" class="output"></div>
+    <input id="uriInput" type="text" placeholder="Google Mapsの短縮URLを入力" />
+    <button onclick="extractInfo()">GO</button>
+    <div class="output" id="outputArea"></div>
     <button class="copy-button" onclick="copyOutput()">コピー</button>
   </div>
 
@@ -27,29 +59,28 @@
     let count = 1;
 
     async function extractInfo() {
-      const shortUrl = document.getElementById("uriInput").value.trim();
+      const shortUrl = document.getElementById('uriInput').value;
       if (!shortUrl) return alert("短縮URLを入力してください。");
 
       try {
-        const apiRes = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
-        const data = await apiRes.json();
+        const res = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
+        const data = await res.json();
 
-        if (!apiRes.ok) throw new Error(data.error || "APIエラー");
+        if (!res.ok) throw new Error(data.error || "失敗");
 
-        const { resolvedUrl, result } = data;
-
-        const name = result.name || "";
-        const address = result.formatted_address || "";
+        const result = data.result;
         const comps = result.address_components || [];
         const pref = (comps.find(c => c.types.includes("administrative_area_level_1")) || {}).long_name || "";
         const city = (comps.find(c => c.types.includes("locality") || c.types.includes("administrative_area_level_2")) || {}).long_name || "";
 
-        const output = `番号: ${count}
+        const outputText = `番号: ${count}
 都道府県＋市町村: ${pref}${city}
-地図の名前: ${name}
-住所: ${address}
-URI: ${resolvedUrl}`;
-        document.getElementById("outputArea").textContent = output;
+地図の名前: ${result.name || ""}
+住所: ${result.formatted_address || ""}
+URI:
+${data.resolvedUrl}`;
+
+        document.getElementById("outputArea").textContent = outputText;
         count++;
       } catch (e) {
         alert("エラー: " + e.message);
