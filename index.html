@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Maps î•ñ’ŠoiPlace ID‘Î‰E’ZkURL‘Î‰j</title>
+  <title>Google Maps æƒ…å ±æŠ½å‡ºï¼ˆPlace IDå¯¾å¿œãƒ»çŸ­ç¸®URLå¯¾å¿œï¼‰</title>
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f8f8f8; }
     .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -15,11 +15,11 @@
 </head>
 <body>
   <div class="container">
-    <h2>Google Mapsî•ñ’Šoi’ZkURL‘Î‰j</h2>
-    <input id="uriInput" type="text" placeholder="Google Maps‚Ì’ZkURL‚ğ“ü—Í" />
+    <h2>Google Mapsæƒ…å ±æŠ½å‡ºï¼ˆçŸ­ç¸®URLå¯¾å¿œï¼‰</h2>
+    <input id="uriInput" type="text" placeholder="Google Mapsã®çŸ­ç¸®URLã‚’å…¥åŠ›" />
     <button onclick="extractInfo()">GO</button>
     <div class="output" id="outputArea"></div>
-    <button class="copy-button" onclick="copyOutput()">ƒRƒs[</button>
+    <button class="copy-button" onclick="copyOutput()">ã‚³ãƒ”ãƒ¼</button>
   </div>
 
   <script>
@@ -28,7 +28,7 @@
 
     async function extractInfo() {
       const shortUrl = document.getElementById('uriInput').value;
-      if (!shortUrl) return alert("’ZkURL‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢B");
+      if (!shortUrl) return alert("çŸ­ç¸®URLã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ã€‚");
 
       try {
         const resolvedUrl = await resolveShortUrl(shortUrl);
@@ -37,14 +37,14 @@
         const geoRes = await fetch(geocodeUrl);
         const geoData = await geoRes.json();
 
-        if (geoData.status !== "OK") throw new Error("Geocodeæ“¾¸”s: " + geoData.status);
+        if (geoData.status !== "OK") throw new Error("Geocodeå–å¾—å¤±æ•—: " + geoData.status);
         const placeId = geoData.results[0].place_id;
 
         const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${API_KEY}&language=ja`;
         const detailsRes = await fetch(detailsUrl);
         const detailsData = await detailsRes.json();
 
-        if (detailsData.status !== "OK") throw new Error("Ú×æ“¾¸”s: " + detailsData.status);
+        if (detailsData.status !== "OK") throw new Error("è©³ç´°å–å¾—å¤±æ•—: " + detailsData.status);
 
         const result = detailsData.result;
         const name = result.name || "";
@@ -53,11 +53,11 @@
         const pref = (comps.find(c => c.types.includes("administrative_area_level_1")) || {}).long_name || "";
         const city = (comps.find(c => c.types.includes("locality") || c.types.includes("administrative_area_level_2")) || {}).long_name || "";
 
-        const output = `”Ô†: ${count}\n“s“¹•{Œ§{s’¬‘º: ${pref}${city}\n’n}‚Ì–¼‘O: ${name}\nZŠ: ${address}\nURI: ${resolvedUrl}`;
+        const output = `ç•ªå·: ${count}\néƒ½é“åºœçœŒï¼‹å¸‚ç”ºæ‘: ${pref}${city}\nåœ°å›³ã®åå‰: ${name}\nä½æ‰€: ${address}\nURI: ${resolvedUrl}`;
         document.getElementById('outputArea').textContent = output;
         count++;
       } catch (e) {
-        alert("ƒGƒ‰[: " + e.message);
+        alert("ã‚¨ãƒ©ãƒ¼: " + e.message);
       }
     }
 
@@ -68,7 +68,7 @@
 
     function copyOutput() {
       const text = document.getElementById('outputArea').textContent;
-      navigator.clipboard.writeText(text).then(() => alert("ƒRƒs[‚µ‚Ü‚µ‚½I"));
+      navigator.clipboard.writeText(text).then(() => alert("ã‚³ãƒ”ãƒ¼ã—ã¾ã—ãŸï¼"));
     }
   </script>
 </body>
