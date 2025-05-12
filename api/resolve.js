@@ -3,31 +3,34 @@ export default async function handler(req, res) {
   if (!targetUrl) return res.status(400).json({ error: 'Missing URL' });
 
   try {
-    // URL展開
+    // 1. 短縮URLを展開
     const response = await fetch(targetUrl, { method: 'GET', redirect: 'follow' });
     const resolvedUrl = response.url;
 
-    // Geocoding API で Place ID を取得
-    const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(resolvedUrl)}&key=${process.env.GOOGLE_API_KEY}`);
+    // 2. 緯度・経度を URL 中の @lat,lng 形式から抽出
+    const match = resolvedUrl.match(/@([-.\d]+),([-.\d]+)/);
+    if (!match) return res.status(400).json({ error: 'URLに緯度経度が含まれていません', resolvedUrl });
+
+    const lat = match[1];
+    const lng = match[2];
+
+    // 3. 緯度経度で Geocoding API を使って詳細住所取得
+    const geoRes = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.GOOGLE_API_KEY}&language=ja`
+    );
     const geoData = await geoRes.json();
 
     if (geoData.status !== "OK") {
-      return res.status(404).json({ error: "Place ID 取得失敗", detail: geoData });
+      return res.status(500).json({ error: "Geocoding API 失敗", detail: geoData });
     }
 
-    const placeId = geoData.results[0].place_id;
-
-    // Place Details API で詳細取得
-    const detailRes = await fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&language=ja&key=${process.env.GOOGLE_API_KEY}`);
-    const detailData = await detailRes.json();
-
-    if (detailData.status !== "OK") {
-      return res.status(500).json({ error: "詳細取得失敗", detail: detailData });
-    }
+    const result = geoData.results[0];
 
     res.status(200).json({
       resolvedUrl,
-      result: detailData.result
+      lat,
+      lng,
+      result
     });
   } catch (e) {
     res.status(500).json({ error: 'サーバー内部エラー', message: e.message });
