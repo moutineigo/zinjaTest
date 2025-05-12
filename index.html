@@ -3,14 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Maps 情報抽出（短縮URL展開API対応）</title>
+  <title>Google Maps 情報抽出（短縮URL対応）</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f8f8f8; }
-    .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    input[type=text] { width: 100%; padding: 10px; font-size: 16px; margin-bottom: 10px; }
-    button { padding: 10px 20px; font-size: 16px; border: none; background: #f76c6c; color: white; border-radius: 5px; cursor: pointer; }
-    .output { background: #eef6ff; padding: 10px; margin-top: 20px; border-radius: 5px; white-space: pre-wrap; }
-    .copy-button { margin-top: 10px; background: #2196f3; }
+    body {
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+      padding: 40px;
+    }
+    .container {
+      background-color: white;
+      max-width: 600px;
+      margin: auto;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #f76c6c;
+      color: white;
+      cursor: pointer;
+    }
+    .output {
+      background-color: #e8f2ff;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+    }
+    .copy-button {
+      background-color: #2196f3;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -33,11 +66,18 @@
         const res = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.error || "情報取得に失敗しました");
+        if (!res.ok) {
+          console.error("APIエラー:", data);
+          throw new Error(data.error || 'API失敗');
+        }
 
-        const { resolvedUrl, name, address, pref, city } = data;
+        const output = `番号: ${count}
+都道府県＋市町村: ${data.pref}${data.city}
+地図の名前: ${data.name}
+住所: ${data.address}
+URI:
+${data.resolvedUrl}`;
 
-        const output = `番号: ${count}\n都道府県＋市町村: ${pref}${city}\n地図の名前: ${name}\n住所: ${address}\nURI: ${resolvedUrl}`;
         document.getElementById('outputArea').textContent = output;
         count++;
       } catch (e) {
