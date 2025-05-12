@@ -26,18 +26,18 @@
     let count = 1;
     const API_KEY = 
 
-    async function extractInfo() {
-      const shortUrl = document.getElementById('uriInput').value;
-      if (!shortUrl) return alert("短縮URLを入力してください。");
+async function extractInfo() {
+  const shortUrl = document.getElementById('uriInput').value;
+  if (!shortUrl) return alert("短縮URLを入力してください。");
 
-      try {
-        const resolvedUrl = await resolveShortUrl(shortUrl);
+  try {
+    const { resolvedUrl, apiKey } = await resolveShortUrl(shortUrl);
 
-        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(resolvedUrl)}&key=${API_KEY}`;
-        const geoRes = await fetch(geocodeUrl);
-        const geoData = await geoRes.json();
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(resolvedUrl)}&key=${apiKey}`;
+    const geoRes = await fetch(geocodeUrl);
+    const geoData = await geoRes.json();
 
-        if (geoData.status !== "OK") throw new Error("Geocode取得失敗: " + geoData.status);
+    if (geoData.status !== "OK") throw new Error("Geocode取得失敗: " + geoData.status);
         const placeId = geoData.results[0].place_id;
 
         const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${API_KEY}&language=ja`;
@@ -61,12 +61,14 @@
       }
     }
 
+
+
     async function resolveShortUrl(shortUrl) {
-      const res = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'URL展開失敗');
-      return data.resolvedUrl;
-    }
+  const res = await fetch(`/api/resolve?url=${encodeURIComponent(shortUrl)}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'URL展開失敗');
+  return data; // ← resolvedUrl と apiKey を含む
+}
 
     function copyOutput() {
       const text = document.getElementById('outputArea').textContent;
