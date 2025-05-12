@@ -8,7 +8,8 @@ export default async function handler(req, res) {
       redirect: 'follow',
     });
 
-    res.status(200).json({ resolvedUrl: response.url });
+    const apiKey = process.env.GOOGLE_API_KEY;
+    res.status(200).json({ resolvedUrl: response.url, apiKey });
   } catch (e) {
     res.status(500).json({ error: 'Failed to resolve URL', details: e.message });
   }
